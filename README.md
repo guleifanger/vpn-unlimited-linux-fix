@@ -18,24 +18,32 @@ This repository provides a modified package that works on modern Linux distribut
 
 ## 🚀 Quick Install
 
-### Option 1: Automatic Installation (Recommended)
+### Option 1: One-Line Install (Easiest)
 
 ```bash
-# Clone the repository
+wget -qO- https://raw.githubusercontent.com/guleifanger/vpn-unlimited-linux-fix/main/quick-install.sh | sudo bash
+```
+
+Or with curl:
+```bash
+curl -fsSL https://raw.githubusercontent.com/guleifanger/vpn-unlimited-linux-fix/main/quick-install.sh | sudo bash
+```
+
+This automatically:
+- Downloads and installs the fixed package
+- Applies DNS resolution fix
+- Configures daemon auto-start
+- Sets up all permissions
+
+### Option 2: Clone and Install
+
+```bash
 git clone https://github.com/guleifanger/vpn-unlimited-linux-fix.git
 cd vpn-unlimited-linux-fix
-
-# Run the installation script
 sudo ./install-fixes.sh
 ```
 
-This script will:
-- Install the fixed VPN Unlimited package
-- Fix DNS resolution issues
-- Configure the daemon to start automatically
-- Set up correct permissions
-
-### Option 2: Manual Installation
+### Option 3: Manual Installation
 
 ```bash
 # Download the fixed package
