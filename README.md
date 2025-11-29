@@ -18,6 +18,25 @@ This repository provides a modified package that works on modern Linux distribut
 
 ## 🚀 Quick Install
 
+### Option 1: Automatic Installation (Recommended)
+
+```bash
+# Clone the repository
+git clone https://github.com/guleifanger/vpn-unlimited-linux-fix.git
+cd vpn-unlimited-linux-fix
+
+# Run the installation script
+sudo ./install-fixes.sh
+```
+
+This script will:
+- Install the fixed VPN Unlimited package
+- Fix DNS resolution issues
+- Configure the daemon to start automatically
+- Set up correct permissions
+
+### Option 2: Manual Installation
+
 ```bash
 # Download the fixed package
 wget https://github.com/guleifanger/vpn-unlimited-linux-fix/releases/latest/download/vpn-unlimited-9.0.1-fixed.deb
@@ -27,13 +46,25 @@ sudo dpkg -i vpn-unlimited-9.0.1-fixed.deb
 
 # Install any missing dependencies
 sudo apt install -f
+
+# Apply post-installation fixes (see below)
 ```
 
 ## 📦 What Was Changed?
 
-Only the package metadata (DEBIAN/control) was modified:
-- Removed `libqt5webkit5` dependency
-- Removed `libllvm13 | libllvm14 | libllvm15` dependency
+### 1. Package Dependencies (DEBIAN/control)
+- Removed `libqt5webkit5` dependency (deprecated)
+- Removed `libllvm13 | libllvm14 | libllvm15` dependency (unavailable)
+
+### 2. DNS Resolution Script
+- Fixed `/usr/sbin/vpnu_update-resolv-conf` to use `systemd-resolved` instead of iptables
+- Removed problematic DNS port redirection that blocked internet access
+- Now uses `resolvectl` for proper DNS configuration
+
+### 3. Daemon Service
+- Created proper systemd service unit for `vpn-unlimited-daemon`
+- Ensures daemon starts automatically on boot
+- Improves stability and reliability
 
 **No application code was modified.** All binaries remain unchanged and original.
 
