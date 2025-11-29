@@ -1,0 +1,19 @@
+# Build artifacts
+vpn-unlimited-original.deb
+vpn-unlimited-extracted/
+*.deb.backup
+
+# Temporary files
+*.tmp
+*.log
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Editor files
+*.swp
+*.swo
+*~
+.vscode/
+.idea/
