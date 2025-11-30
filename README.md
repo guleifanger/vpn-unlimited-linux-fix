@@ -80,9 +80,11 @@ sudo apt install -f
 - Resolves "No such file or directory" errors for certificate storage
 
 ### 5. Temp Directory Permissions
-- Creates `/tmp/VPN Unlimited` with secure permissions (700)
-- Fixes WireGuard connection failures due to permission issues
-- Properly sets ownership to the current user
+- Creates `/tmp/VPN Unlimited` with shared permissions (770)
+- Owner: root (daemon runs as root)
+- Group: user's primary group (GUI runs as user)
+- Fixes WireGuard and OpenVPN connection failures due to permission issues
+- Uses systemd-tmpfiles.d for persistent configuration across reboots
 
 **No application code was modified.** All binaries remain unchanged and original.
 
@@ -125,10 +127,12 @@ The script will:
 sudo pkill -9 vpn-unlimited
 
 # Recreate temp directory with correct permissions
+# The directory must be owned by root with user's group for both daemon and GUI access
+USER_GROUP=$(id -gn)
 sudo rm -rf '/tmp/VPN Unlimited'
 sudo mkdir -p '/tmp/VPN Unlimited'
-sudo chown $USER:$USER '/tmp/VPN Unlimited'
-sudo chmod 700 '/tmp/VPN Unlimited'
+sudo chmod 770 '/tmp/VPN Unlimited'
+sudo chown "root:$USER_GROUP" '/tmp/VPN Unlimited'
 
 # Restart daemon
 sudo systemctl restart vpn-unlimited-daemon

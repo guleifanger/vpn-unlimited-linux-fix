@@ -78,16 +78,28 @@ Warning: '/tmp/VPN Unlimited/VPNUWireguard.conf' is world accessible
 3. Overly permissive default permissions
 
 **Solution:**
-1. Create `/tmp/VPN Unlimited` with mode 700 (owner-only access)
-2. Set proper ownership to the actual user (not root)
-3. Ensure daemon can still access via its privileges
+1. Create `/tmp/VPN Unlimited` with mode 770 (owner+group access)
+2. Set ownership to root:user_group (daemon runs as root, GUI as user)
+3. Use systemd-tmpfiles.d for persistent configuration
 
 **Implementation:**
 ```bash
+USER_GROUP=$(id -gn $SUDO_USER)
 mkdir -p "/tmp/VPN Unlimited"
-chmod 700 "/tmp/VPN Unlimited"
-chown $SUDO_USER:$SUDO_USER "/tmp/VPN Unlimited"
+chmod 770 "/tmp/VPN Unlimited"
+chown "root:$USER_GROUP" "/tmp/VPN Unlimited"
+
+# Persist via systemd-tmpfiles
+cat > /etc/tmpfiles.d/vpn-unlimited.conf << EOF
+d "/tmp/VPN Unlimited" 0770 root $USER_GROUP - -
+EOF
 ```
+
+**Why 770 root:user_group?**
+- Daemon runs as root and creates VPN configuration files
+- GUI runs as user and also needs to create/read files
+- Group permissions (rwx) allow both to access
+- No "world" permissions keeps wg-quick security checks happy
 
 ### Zombie Process Issue
 

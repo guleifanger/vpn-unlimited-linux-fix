@@ -73,14 +73,41 @@ chmod 700 /etc/ipsec.d/private
 echo -e "  ${GREEN}✓${NC} IPsec directories created"
 echo ""
 
-echo -e "${YELLOW}Step 6:${NC} Creating temp directory with correct permissions..."
-mkdir -p "/tmp/VPN Unlimited"
-chmod 700 "/tmp/VPN Unlimited"
-# Set ownership to the user who invoked sudo
-if [ -n "$SUDO_USER" ]; then
-    chown "$SUDO_USER:$SUDO_USER" "/tmp/VPN Unlimited"
+echo -e "${YELLOW}Step 6:${NC} Installing tmpfiles.d configuration..."
+if [ -f "vpn-unlimited-tmpfiles.conf" ]; then
+    # Get the primary user and group
+    if [ -n "$SUDO_USER" ]; then
+        USER_GROUP=$(id -gn "$SUDO_USER")
+    else
+        USER_GROUP="users"
+    fi
+
+    # Replace placeholder with actual group
+    sed "s/%USER_GROUP%/$USER_GROUP/g" vpn-unlimited-tmpfiles.conf > /etc/tmpfiles.d/vpn-unlimited.conf
+    systemd-tmpfiles --create /etc/tmpfiles.d/vpn-unlimited.conf
+    echo -e "  ${GREEN}✓${NC} Tmpfiles configuration installed (group: $USER_GROUP)"
+else
+    echo -e "  ${YELLOW}!${NC} Tmpfiles config not found, creating manually"
 fi
-echo -e "  ${GREEN}✓${NC} Temp directory created"
+echo ""
+
+echo -e "${YELLOW}Step 7:${NC} Creating temp directory with correct permissions..."
+# Get the primary user and group
+if [ -n "$SUDO_USER" ]; then
+    USER_NAME="$SUDO_USER"
+    USER_GROUP=$(id -gn "$SUDO_USER")
+else
+    USER_NAME="root"
+    USER_GROUP="root"
+fi
+
+# Remove old directory if it exists with wrong permissions
+rm -rf "/tmp/VPN Unlimited"
+# Create with correct permissions (770 = rwxrwx---)
+mkdir -p "/tmp/VPN Unlimited"
+chmod 770 "/tmp/VPN Unlimited"
+chown "root:$USER_GROUP" "/tmp/VPN Unlimited"
+echo -e "  ${GREEN}✓${NC} Temp directory created (root:$USER_GROUP, mode 770)"
 echo ""
 
 echo -e "${GREEN}✅ Installation complete!${NC}"
