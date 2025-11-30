@@ -4,6 +4,9 @@ After=network.target
 
 [Service]
 Type=simple
+# Kill any zombie/old daemon processes before starting
+# This prevents zombie process accumulation from failed WireGuard connections
+ExecStartPre=-/bin/sh -c '/usr/bin/pkill -9 -f vpn-unlimited-daemon || true'
 ExecStart=/usr/bin/vpn-unlimited-daemon
 Restart=on-failure
 RestartSec=5
