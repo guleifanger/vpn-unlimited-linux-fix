@@ -41,6 +41,65 @@ The t64 suffix indicates time64_t transition packages, which are not compatible 
 - Legacy requirements from an older build system
 - Transitive dependencies that are no longer needed
 
+## Additional Runtime Issues
+
+### IPsec Directory Structure
+
+**Problem:** When connecting via IPsec/IKEv2, the daemon crashes with:
+```
+cp: cannot create regular file '/etc/ipsec.d/cacerts/caCert.crt': No such file or directory
+```
+
+**Root Cause:** The application expects the strongSwan directory structure to exist, but modern strongSwan installations don't always create these directories upfront.
+
+**Solution:** Create the required directory structure:
+```bash
+/etc/ipsec.d/
+├── cacerts/    # CA certificates
+├── certs/      # Client certificates
+└── private/    # Private keys
+```
+
+**Permissions:**
+- `/etc/ipsec.d/`, `cacerts/`, `certs/`: 755 (world-readable)
+- `private/`: 700 (restricted access)
+
+### Temp Directory Permissions
+
+**Problem:** WireGuard connections fail with permission errors:
+```
+/usr/bin/wg-quick: line 40: /tmp/VPN Unlimited/VPNUWireguard.conf: Permission denied
+Warning: '/tmp/VPN Unlimited/VPNUWireguard.conf' is world accessible
+```
+
+**Root Cause:** The directory name contains a space, which causes issues with:
+1. Shell script parsing in wg-quick
+2. Incorrect ownership when created by root
+3. Overly permissive default permissions
+
+**Solution:**
+1. Create `/tmp/VPN Unlimited` with mode 700 (owner-only access)
+2. Set proper ownership to the actual user (not root)
+3. Ensure daemon can still access via its privileges
+
+**Implementation:**
+```bash
+mkdir -p "/tmp/VPN Unlimited"
+chmod 700 "/tmp/VPN Unlimited"
+chown $SUDO_USER:$SUDO_USER "/tmp/VPN Unlimited"
+```
+
+### Zombie Process Issue
+
+**Problem:** Hundreds of defunct (zombie) daemon processes accumulate, preventing connections.
+
+**Root Cause:** When the daemon encounters permission or directory errors, child processes fail but aren't properly reaped, leaving zombie processes.
+
+**Solution:**
+1. Fix the underlying permission issues (above)
+2. Kill all zombie processes: `sudo pkill -9 vpn-unlimited`
+3. Restart daemon cleanly: `sudo systemctl restart vpn-unlimited-daemon`
+
 ## Solution Implementation
 
 ### Approach
@@ -74,10 +133,12 @@ We modify only the package metadata (DEBIAN/control file) without touching any a
 | Installation | ✅ Success | No dependency errors |
 | GUI Launch | ✅ Success | Interface renders correctly |
 | OpenVPN | ✅ Working | Connections established successfully |
-| WireGuard | ✅ Working | Protocol functions normally |
-| strongSwan | ✅ Working | IPSec connections work |
+| WireGuard | ✅ Working | Protocol functions after permission fix |
+| strongSwan (IPsec) | ✅ Working | IPsec/IKEv2 works after directory creation |
 | Settings | ✅ Working | All configuration options accessible |
 | WebEngine UI | ✅ Working | Embedded web views render properly |
+| DNS Resolution | ✅ Working | systemd-resolved integration functional |
+| Daemon Auto-start | ✅ Working | Systemd service starts on boot |
 
 ### Dependencies Installed
 

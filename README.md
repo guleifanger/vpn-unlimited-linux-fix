@@ -74,6 +74,16 @@ sudo apt install -f
 - Ensures daemon starts automatically on boot
 - Improves stability and reliability
 
+### 4. IPsec/IKEv2 Support
+- Creates required directories: `/etc/ipsec.d/{cacerts,certs,private}`
+- Fixes crashes when connecting with IPsec/IKEv2 protocol
+- Resolves "No such file or directory" errors for certificate storage
+
+### 5. Temp Directory Permissions
+- Creates `/tmp/VPN Unlimited` with secure permissions (700)
+- Fixes WireGuard connection failures due to permission issues
+- Properly sets ownership to the current user
+
 **No application code was modified.** All binaries remain unchanged and original.
 
 ## ✔️ Tested On
@@ -102,6 +112,57 @@ The script will:
 2. Extract it
 3. Modify the dependencies
 4. Rebuild the package
+
+## 🐛 Troubleshooting
+
+### VPN won't connect / Hangs on "Connecting..."
+
+**Symptom:** VPN tries to connect but never succeeds. Many zombie processes appear.
+
+**Solution:**
+```bash
+# Kill all VPN processes
+sudo pkill -9 vpn-unlimited
+
+# Recreate temp directory with correct permissions
+sudo rm -rf '/tmp/VPN Unlimited'
+sudo mkdir -p '/tmp/VPN Unlimited'
+sudo chown $USER:$USER '/tmp/VPN Unlimited'
+sudo chmod 700 '/tmp/VPN Unlimited'
+
+# Restart daemon
+sudo systemctl restart vpn-unlimited-daemon
+```
+
+### IPsec/IKEv2 connection fails
+
+**Symptom:** Logs show "cannot create regular file '/etc/ipsec.d/cacerts/caCert.crt': No such file or directory"
+
+**Solution:**
+```bash
+# Create IPsec directories
+sudo mkdir -p /etc/ipsec.d/{cacerts,certs,private}
+sudo chmod 755 /etc/ipsec.d /etc/ipsec.d/{cacerts,certs}
+sudo chmod 700 /etc/ipsec.d/private
+```
+
+### WireGuard permission errors
+
+**Symptom:** Logs show "Permission denied" or "world accessible" warnings for WireGuard config
+
+**Solution:** Run the fixes above to recreate `/tmp/VPN Unlimited` with proper permissions.
+
+### Check logs
+
+View real-time daemon logs:
+```bash
+sudo journalctl -u vpn-unlimited-daemon -f
+```
+
+View OpenVPN/WireGuard connection logs:
+```bash
+tail -f '/tmp/VPN Unlimited/'*.log
+```
 
 ## 📋 Technical Details
 

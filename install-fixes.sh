@@ -66,9 +66,20 @@ else
 fi
 echo ""
 
-echo -e "${YELLOW}Step 5:${NC} Creating temp directory with correct permissions..."
+echo -e "${YELLOW}Step 5:${NC} Creating IPsec directories..."
+mkdir -p /etc/ipsec.d/cacerts /etc/ipsec.d/certs /etc/ipsec.d/private
+chmod 755 /etc/ipsec.d /etc/ipsec.d/cacerts /etc/ipsec.d/certs
+chmod 700 /etc/ipsec.d/private
+echo -e "  ${GREEN}✓${NC} IPsec directories created"
+echo ""
+
+echo -e "${YELLOW}Step 6:${NC} Creating temp directory with correct permissions..."
 mkdir -p "/tmp/VPN Unlimited"
 chmod 700 "/tmp/VPN Unlimited"
+# Set ownership to the user who invoked sudo
+if [ -n "$SUDO_USER" ]; then
+    chown "$SUDO_USER:$SUDO_USER" "/tmp/VPN Unlimited"
+fi
 echo -e "  ${GREEN}✓${NC} Temp directory created"
 echo ""
 
