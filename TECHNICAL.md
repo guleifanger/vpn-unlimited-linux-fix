@@ -99,7 +99,16 @@ EOF
 - Daemon runs as root and creates VPN configuration files
 - GUI runs as user and also needs to create/read files
 - Group permissions (rwx) allow both to access
-- No "world" permissions keeps wg-quick security checks happy
+- No "world" permissions for better security
+
+**WireGuard Limitation:**
+Despite correct permissions (770), WireGuard's `wg-quick` still fails because:
+1. It checks parent directory permissions: `$(stat -c '0%#a' "${CONFIG_FILE%/*}")`
+2. The directory name contains a space: `/tmp/VPN Unlimited`
+3. Bash parameter expansion and stat produce inconsistent results
+4. wg-quick rejects with "world accessible" warning even with 770 permissions
+
+**Result:** WireGuard protocol is not supported. Use IPsec/IKEv2 or OpenVPN instead.
 
 ### Zombie Process Issue
 
@@ -145,7 +154,7 @@ We modify only the package metadata (DEBIAN/control file) without touching any a
 | Installation | ✅ Success | No dependency errors |
 | GUI Launch | ✅ Success | Interface renders correctly |
 | OpenVPN | ✅ Working | Connections established successfully |
-| WireGuard | ✅ Working | Protocol functions after permission fix |
+| WireGuard | ❌ Not Working | wg-quick rejects directories with spaces in name |
 | strongSwan (IPsec) | ✅ Working | IPsec/IKEv2 works after directory creation |
 | Settings | ✅ Working | All configuration options accessible |
 | WebEngine UI | ✅ Working | Embedded web views render properly |

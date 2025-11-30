@@ -88,6 +88,29 @@ sudo apt install -f
 
 **No application code was modified.** All binaries remain unchanged and original.
 
+## 🔌 Supported VPN Protocols
+
+| Protocol | Status | Notes |
+|----------|--------|-------|
+| **IPsec/IKEv2** | ✅ **Recommended** | Best compatibility, stable connections |
+| **OpenVPN** | ✅ Working | UDP and TCP modes both functional |
+| **WireGuard** | ⚠️ **Not Supported** | Fails due to space in directory name `/tmp/VPN Unlimited` |
+
+### Why WireGuard Doesn't Work
+
+WireGuard's `wg-quick` script has strict security checks that reject configuration files in directories with spaces in the name. The VPN Unlimited application uses `/tmp/VPN Unlimited` (with space), which triggers:
+```
+Warning: '/tmp/VPN Unlimited/VPNUWireguard.conf' is world accessible
+Permission denied
+```
+
+**Workaround:** Use IPsec/IKEv2 or OpenVPN protocols instead.
+
+To change protocol:
+1. Open VPN Unlimited settings
+2. Look for "Protocol" or "Connection Method"
+3. Select "IKEv2" or "OpenVPN UDP"
+
 ## ✔️ Tested On
 
 - ✅ Ubuntu 25.04 (Questing) - Linux 6.17.0
@@ -150,11 +173,24 @@ sudo chmod 755 /etc/ipsec.d /etc/ipsec.d/{cacerts,certs}
 sudo chmod 700 /etc/ipsec.d/private
 ```
 
-### WireGuard permission errors
+### WireGuard permission errors / Many zombie processes
 
-**Symptom:** Logs show "Permission denied" or "world accessible" warnings for WireGuard config
+**Symptom:** Logs show "Permission denied" or "world accessible" warnings. Hundreds of defunct (zombie) `vpn-unlimited-d` processes accumulate.
 
-**Solution:** Run the fixes above to recreate `/tmp/VPN Unlimited` with proper permissions.
+**Root Cause:** WireGuard's `wg-quick` rejects the `/tmp/VPN Unlimited` directory due to the space in the name.
+
+**Solution:** Switch to IPsec/IKEv2 or OpenVPN protocol (WireGuard is not supported).
+
+If you need to clean up zombie processes:
+```bash
+sudo ./cleanup-zombies.sh
+```
+
+Or manually:
+```bash
+sudo pkill -9 vpn-unlimited
+sudo systemctl restart vpn-unlimited-daemon
+```
 
 ### Check logs
 
